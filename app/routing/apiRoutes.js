@@ -12,36 +12,48 @@ module.exports = function(app) {
 
 
   // API POST Requests
-  // Below code handles when a user submits a form and thus submits data to the server.
-  // In each of the below cases, when a user submits form data (a JSON object)
-  // ...the JSON is pushed to the appropriate JavaScript array
-  // (ex. User fills out a reservation request... this data is then sent to the server...
-  // Then the server saves the data to the tableData array)
-  // ---------------------------------------------------------------------------
 
-  app.post("/api/friends", function(req, res) {
-    // Note the code here. Our "server" will respond to requests and let users know if they have a table or not.
-    // It will do this by sending out the value "true" have a table
-    // req.body is available since we're using the body-parser middleware
-    if (tableData.length < 5) {
-      tableData.push(req.body);
-      res.json(true);
+    app.post('/api/friends', function(req, res){
+    var newFriend = req.body;
+
+    for(var i = 0; i < newFriend.scores.length; i++) {
+      if(newFriend.scores[i] == "1 (Strongly Disagree)") {
+        newFriend.scores[i] = 1;
+      } else if(newFriend.scores[i] == "5 (Strongly Agree)") {
+        newFriend.scores[i] = 5;
+      } else {
+        newFriend.scores[i] = parseInt(newFriend.scores[i]);
+      }
     }
-    else {
-      waitListData.push(req.body);
-      res.json(false);
+
+    var differencesArray = [];
+
+    for(var i = 0; i < friendsArray.length; i++) {
+
+      var comparedFriend = friendsArray[i];
+      var totalDifference = 0;
+      
+      for(var k = 0; k < comparedFriend.scores.length; k++) {
+        var differenceOneScore = Math.abs(comparedFriend.scores[k] - newFriend.scores[k]);
+        totalDifference += differenceOneScore;
+      }
+
+      differencesArray[i] = totalDifference;
     }
-  });
 
-  // ---------------------------------------------------------------------------
-  // I added this below code so you could clear out the table while working with the functionality.
-  // Don"t worry about it!
+    var bestFriendNum = differencesArray[0];
+    var bestFriendIndex = 0;
 
-  app.post("/api/clear", function() {
-    // Empty out the arrays of data
-    tableData = [];
-    waitListData = [];
+    for(var i = 1; i < differencesArray.length; i++) {
+      if(differencesArray[i] < bestFriendNum) {
+        bestFriendNum = differencesArray[i];
+        bestFriendIndex = i;
+      }
+    }
 
-    console.log(tableData);
-  });
+    friendData.push(newFriend);
+
+    res.json(friendsArray[bestFriendIndex]);
+  })
+
 };
